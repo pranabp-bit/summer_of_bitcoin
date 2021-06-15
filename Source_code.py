@@ -196,8 +196,8 @@ for x in BLOCK:
         print("ERROR: Repeated Transaction")
         
 #Setting all transactions to not visited        
-for x in BLOCK:
-    vis[x]=0
+for x in orig_Transactions:
+    vis[x.txid]=0
     
 Total_weight=0
 Total_fee=0
