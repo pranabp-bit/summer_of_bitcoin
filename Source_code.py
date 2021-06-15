@@ -72,7 +72,7 @@ cum_wt={}
 cum_fee={}
 # initialize dictionary to store the ratio of cum_fee and cum_wt
 cur_density={}
-
+# child is a list of list, which will store all the child, grandchild type transactions for a particular index
 child=x = [[] for x in range(i)]
 
 for x in Transactions:
@@ -125,7 +125,7 @@ for x in Transactions:
 # iterate over the transactions again and again till the list Transactions becomes empty.
 # In each iteration keep removing the transactions which are being added to the ans and the transactions which CANNOT be added to the ans
 
-    # First step is to calculate cum_wt, cum_fee, cur_density for each transaction
+    # First step is to calculate cum_wt, cum_fee, cur_density for each transaction (Calculate once, and update only those which were related to previous transactions)
 
         
     #Second step is to choose the transaction which has the maximum cur_density and its cumulated weight and the current total weight do not exceed the maximum weight allowec
@@ -229,8 +229,9 @@ for line in BLOCK:
   output_file.write("\n")
 output_file.close()
 
-#The given code is more of a brute-force approach. It can be optimized by avoiding the calculation of cum_wt and cum_fee again and again.
-#This can be done by updating only those cum_wt and cum_fee which were effected by the last transaction which was added to the block.
+
+#The previous code was more of a brute-force approach. It has been optimized by avoiding the calculation of cum_wt and cum_fee again and again.
+#This is done by updating only those cum_wt and cum_fee which were effected by the last transaction which was added to the block.
 
 ### Step-by-Step verification was done before reaching the above final code:    
 # #Naive solution constructing a valid block
