@@ -44,11 +44,13 @@ for x in Transactions:
     
 #initialize a dictionary 'visited' which indicates that while traversing over the transactions , has the particular transaction been visited(0 means "not visited", 1 means "visited")
 visited={}
-
+idx={}
+i=0
 for x in Transactions:
     #mark all tx_id's as "Not visited"
     visited[x.txid]=0
-    
+    idx[x.txid]=i
+    i+=1
 # ordered list of MempoolTransactions
 ans=[]
 
@@ -71,118 +73,126 @@ cum_fee={}
 # initialize dictionary to store the ratio of cum_fee and cum_wt
 cur_density={}
 
+child=x = [[] for x in range(i)]
+
+for x in Transactions:
+    # update the dictionary 'vis' for each transaction.
+    for y in Transactions:
+            vis[y.txid]=0
+    #store the cumulative weight for the current transaction in wts        
+    wts=0
+    #store the cumulative fee for the current transaction in fees
+    fees=0
+    stack=[] 
+    # Stack is being used to execute something similar to a depth first search
+    stack.append(x)
+    flag=0;
+    
+    # Those elements are added to the stack which need to be traversed if transaction x would be added to the ans
+    # So all the elements of the stack, their parents, their parents and so on need to be traversed
+    while(len(stack)!=0):
+        # Accessing the top element of the stack, and storing that transaction in 'curr_trans'
+        curr_trans=stack[-1]
+
+        # if the curr_trans has no parent, simply add its weight and fee to the corresponding cumulative wts and fees, and remove it from the stack
+        if(len(curr_trans.parents[0])==0):
+            wts+=curr_trans.weight
+            fees+=curr_trans.fee
+            vis[curr_trans.txid]=1
+            stack.pop()
+            continue    
+
+        # Check whether all the parents of the curr_trans have been visited, if not push those not visited into the stack    
+        all_parents_visited=1
+        for p in curr_trans.parents:
+            if(vis[p]==0):
+                all_parents_visited=0
+                child[idx[p]].append(x)
+                stack.append(trans[p])
+        
+        # if all the parents of the curr_trans have been visited, simply add its weight and fee to the corresponding cumulative wts and fees, and remove it from the stack
+        if(all_parents_visited==1):
+            wts+=curr_trans.weight
+            fees+=curr_trans.fee
+            vis[curr_trans.txid]=1
+            stack.pop()
+            continue
+            
+    # Update the dictionaries        
+    cum_wt[x]=wts
+    cum_fee[x]=fees
+    cur_density[x]=cum_fee[x]/cum_wt[x]
 # iterate over the transactions again and again till the list Transactions becomes empty.
 # In each iteration keep removing the transactions which are being added to the ans and the transactions which CANNOT be added to the ans
-while(len(Transactions)!=0):
+
     # First step is to calculate cum_wt, cum_fee, cur_density for each transaction
-    for x in Transactions:
-        # update the dictionary 'vis' for each transaction.
-        for y in Transactions:
-            if(visited[y.txid]==1):
-                vis[y.txid]=1
-            else:
-                vis[y.txid]=0
-        #store the cumulative weight for the current transaction in wts        
-        wts=0
-        #store the cumulative fee for the current transaction in fees
-        fees=0
-        stack=[] 
-        # Stack is being used to execute something similar to a depth first search
-        stack.append(x)
-        flag=0;
-        
-        # Those elements are added to the stack which need to be traversed if transaction x would be added to the ans
-        # So all the elements of the stack, their parents, their parents and so on need to be traversed
-        while(len(stack)!=0):
-            # Accessing the top element of the stack, and storing that transaction in 'curr_trans'
-            curr_trans=stack[-1]
 
-            # if the curr_trans has no parent, simply add its weight and fee to the corresponding cumulative wts and fees, and remove it from the stack
-            if(len(curr_trans.parents[0])==0):
-                wts+=curr_trans.weight
-                fees+=curr_trans.fee
-                vis[curr_trans.txid]=1
-                stack.pop()
-                continue    
-
-            # Check whether all the parents of the curr_trans have been visited, if not push those not visited into the stack    
-            all_parents_visited=1
-            for p in curr_trans.parents:
-                if(vis[p]==0):
-                    all_parents_visited=0
-                    stack.append(trans[p])
-            
-            # if all the parents of the curr_trans have been visited, simply add its weight and fee to the corresponding cumulative wts and fees, and remove it from the stack
-            if(all_parents_visited==1):
-                wts+=curr_trans.weight
-                fees+=curr_trans.fee
-                vis[curr_trans.txid]=1
-                stack.pop()
-                continue
-                
-        # Update the dictionaries        
-        cum_wt[x]=wts
-        cum_fee[x]=fees
-        cur_density[x]=cum_fee[x]/cum_wt[x]
         
     #Second step is to choose the transaction which has the maximum cur_density and its cumulated weight and the current total weight do not exceed the maximum weight allowec
     #keep on removing the current maximum density, if it cannot be added to the ans.
-    while(len(cur_density)!=0):
-        # Store the transaction with the maximum density
-        Keymax = max(cur_density, key=cur_density.get)
-        if(cum_wt[Keymax]+wght<=4000000):
-            ##since the sum is less than maximum limit, task is to add the current transaction to the ans after adding its non visited parents, their parents, and so on.
-            stack=[]
-            stack.append(Keymax)
-            flag=0;
-            while(len(stack)!=0):
-                # Accessing the top element of the stack, and storing that transaction in 'curr_trans'
-                curr_trans=stack[-1]
-                
-                # if the curr_trans has no parent, append the transaction to the ans, update wght & feez and remove it from the stack
-                if(len(curr_trans.parents[0])==0):
-                    wght+=curr_trans.weight
-                    feez+=curr_trans.fee
-                    ans.append(curr_trans)
-#                     print(ans[-1].txid)
+while(len(cur_density)!=0):
+    # Store the transaction with the maximum density
+    Keymax = max(cur_density, key=cur_density.get)
+    if(cum_wt[Keymax]+wght<=4000000):
+        ##since the sum is less than maximum limit, task is to add the current transaction to the ans after adding its non visited parents, their parents, and so on.
+        stack=[]
+        stack.append(Keymax)
+        flag=0;
+        while(len(stack)!=0):
+            # Accessing the top element of the stack, and storing that transaction in 'curr_trans'
+            curr_trans=stack[-1]
+            
+            # if the curr_trans has no parent, append the transaction to the ans, update wght & feez and remove it from the stack
+            if(len(curr_trans.parents[0])==0):
+                wght+=curr_trans.weight
+                feez+=curr_trans.fee
+                ans.append(curr_trans)
+                cum_wt.pop(curr_trans)
+                cum_fee.pop(curr_trans)
+                cur_density.pop(curr_trans)
+                for c in child[idx[curr_trans.txid]]:
+                    if c in cum_wt:
+                        cum_wt[c]-=curr_trans.weight
+                        cum_fee[c]-=curr_trans.fee
+                        cur_density[c]=cum_fee[c]/cum_wt[c]
+                #print(ans[-1].txid)
 #                     print(wght)
 #                     print(feez)
-                    visited[curr_trans.txid]=1
-                    Transactions.remove(curr_trans)
-                    stack.pop()
-                    continue    
-                
-                # Check whether all the parents of the curr_trans have been visited, if not push those not visited into the stack
-                all_parents_visited=1
-                for p in curr_trans.parents:
-                    if(visited[p]==0):
-                        all_parents_visited=0
-                        stack.append(trans[p])
+                visited[curr_trans.txid]=1
+                Transactions.remove(curr_trans)
+                stack.pop()
+                continue    
+            
+            # Check whether all the parents of the curr_trans have been visited, if not push those not visited into the stack
+            all_parents_visited=1
+            for p in curr_trans.parents:
+                if(visited[p]==0):
+                    all_parents_visited=0
+                    stack.append(trans[p])
 
-                # if all the parents of the curr_trans have been visited, append the transaction to the ans, update wght & feez and remove it from the stack        
-                if(all_parents_visited==1):
-                    wght+=curr_trans.weight
-                    feez+=curr_trans.fee
-                    visited[curr_trans.txid]=1
-                    ans.append(curr_trans)
-#                     print(ans[-1].txid)
+            # if all the parents of the curr_trans have been visited, append the transaction to the ans, update wght & feez and remove it from the stack        
+            if(all_parents_visited==1):
+                wght+=curr_trans.weight
+                feez+=curr_trans.fee
+                visited[curr_trans.txid]=1
+                ans.append(curr_trans)
+                cum_wt.pop(curr_trans)
+                cum_fee.pop(curr_trans)
+                cur_density.pop(curr_trans)
+                for c in child[idx[curr_trans.txid]]:
+                    if c in cum_wt:
+                        cum_wt[c]-=curr_trans.weight
+                        cum_fee[c]-=curr_trans.fee
+                        cur_density[c]=cum_fee[c]/cum_wt[c]
+                #print(ans[-1].txid)
 #                     print(wght)
 #                     print(feez)
-                    Transactions.remove(curr_trans)
-                    stack.pop()
-            
-            break
-        else:
-            # This transaction can never be added to ans
-            Transactions.remove(Keymax)
-            cur_density.pop(Keymax)
-            
-    if(len(cur_density)==0):
-        ## NO more transactions can be added to the ans
-        break
-    cum_wt.clear()
-    cum_fee.clear()
-    cur_density.clear()
+                Transactions.remove(curr_trans)
+                stack.pop()
+    else:
+        # This transaction can never be added to ans
+        Transactions.remove(Keymax)
+        cur_density.pop(Keymax)
 
 BLOCK=[]
 for x in ans:
