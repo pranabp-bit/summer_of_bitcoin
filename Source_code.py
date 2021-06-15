@@ -219,6 +219,8 @@ for line in BLOCK:
   output_file.write("\n")
 output_file.close()
 
+#The given code is more of a brute-force approach. It can be optimized by avoiding the calculation of cum_wt and cum_fee again and again.
+#This can be done by updating only those cum_wt and cum_fee which were effected by the last transaction which was added to the block.
 
 ### Step-by-Step verification was done before reaching the above final code:    
 # #Naive solution constructing a valid block
@@ -322,6 +324,3 @@ output_file.close()
 
 # Keymax = max(density, key=density.get)
 # print(Keymax.txid)
-
-
-
