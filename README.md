@@ -1,1 +1,2 @@
-# summer_of_bitcoin
+# summer_of_bitcoin Code Challenge
+
